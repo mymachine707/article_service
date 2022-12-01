@@ -3,16 +3,16 @@ package author
 import (
 	"context"
 	"log"
-	authorProto "mymachine707/protogen/blogpost"
+	blogpost "mymachine707/protogen/blogpost"
 )
 
 type AuthorService struct {
-	authorProto.UnimplementedAuthorServiceServer
+	blogpost.UnimplementedAuthorServiceServer
 }
 
-func (s *AuthorService) Ping(ctx context.Context, req *authorProto.Empty) (*authorProto.Pong, error) {
+func (s *AuthorService) Ping(ctx context.Context, req *blogpost.Empty) (*blogpost.Pong, error) {
 	log.Println("Ping")
-	return &authorProto.Pong{
+	return &blogpost.Pong{
 		Message: "Ok",
 	}, nil
 }
