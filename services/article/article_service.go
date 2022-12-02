@@ -64,7 +64,35 @@ func (s *ArticleService) CreateArticle(ctx context.Context, req *blogpost.Create
 	}, nil
 }
 func (s *ArticleService) UpdateArticle(ctx context.Context, req *blogpost.UpdateArticleRequest) (*blogpost.Article, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateArticle not implemented")
+
+	err := s.stg.UpdateArticle(models.UpdateArticleModul{
+		ID: req.Id,
+		Content: models.Content{
+			Title: req.Content.Title,
+			Body:  req.Content.Body,
+		},
+	})
+
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "s.stg.UpdateArticle: %s", err)
+	}
+
+	article, err := s.stg.GetArticleByID(req.Id) // maqsad tekshirish rostan  ham create bo'ldimi?
+
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "s.stg.GetArticleByID: %s", err)
+	}
+
+	return &blogpost.Article{
+		Id: article.ID,
+		Content: &blogpost.Content{
+			Title: req.Content.Title,
+			Body:  req.Content.Body,
+		},
+		AuthorId:  article.Author.ID,
+		CreatedAt: article.CreatedAt.String(),
+		UpdatedAt: article.UpdatedAt.String(),
+	}, nil
 }
 func (s *ArticleService) DeleteArticle(ctx context.Context, req *blogpost.DeleteArticleRequest) (*blogpost.Article, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteArticle not implemented")
