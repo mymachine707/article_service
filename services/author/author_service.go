@@ -3,7 +3,7 @@ package author
 import (
 	"context"
 	"log"
-	blogpost "mymachine707/protogen/blogpost"
+	"mymachine707/protogen/blogpost"
 )
 
 type AuthorService struct {

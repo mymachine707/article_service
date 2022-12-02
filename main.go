@@ -24,7 +24,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func initGRPC() {
+func initGRPC(stg storage.Interfaces) {
 
 	println("gRPC server tutorial in Go")
 
@@ -38,7 +38,7 @@ func initGRPC() {
 	AuthorService := &author.AuthorService{}
 	blogpost.RegisterAuthorServiceServer(s, AuthorService)
 
-	ArticleService := &article.ArticleService{}
+	ArticleService := article.NewArticleService(stg)
 	blogpost.RegisterArticleServiceServer(s, ArticleService)
 
 	reflection.Register(s)
@@ -49,7 +49,6 @@ func initGRPC() {
 
 // @license.name Apache 2.0
 func main() {
-	go initGRPC()
 
 	fmt.Println("---------------------------------->>>")
 
@@ -73,6 +72,7 @@ func main() {
 
 	var err error
 	var stg storage.Interfaces
+
 	stg, err = postgres.InitDB(psqlConfigString)
 
 	if err != nil {
@@ -84,6 +84,8 @@ func main() {
 	}
 
 	r := gin.New()
+
+	initGRPC(stg)
 
 	if cfg.Environment != "production" {
 		r.Use(gin.Logger(), gin.Recovery()) // Later they will be replaced by custom Logger and Recovery
