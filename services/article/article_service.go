@@ -94,12 +94,51 @@ func (s *ArticleService) UpdateArticle(ctx context.Context, req *blogpost.Update
 		UpdatedAt: article.UpdatedAt.String(),
 	}, nil
 }
+
 func (s *ArticleService) DeleteArticle(ctx context.Context, req *blogpost.DeleteArticleRequest) (*blogpost.Article, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteArticle not implemented")
+
+	err := s.stg.DeleteArticle(req.Id)
+
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "s.stg.DeleteArticle: %s", err)
+	}
+
+	article, err := s.stg.GetArticleByID(req.Id) // maqsad tekshirish rostan  ham create bo'ldimi?
+
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "s.stg.GetArticleByID: %s", err)
+	}
+
+	return &blogpost.Article{
+		Id: article.ID,
+		Content: &blogpost.Content{
+			Title: article.Content.Title,
+			Body:  article.Content.Body,
+		},
+		AuthorId:  article.Author.ID,
+		CreatedAt: article.CreatedAt.String(),
+		UpdatedAt: article.UpdatedAt.String(),
+	}, nil
 }
+
 func (s *ArticleService) GetArticleList(ctx context.Context, req *blogpost.GetArticleListRequest) (*blogpost.GetArticleListResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetArticleList not implemented")
+
+	articleList, err := s.stg.GetArticleList(int(req.Offset), int(req.Limit), req.Search)
+
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "s.stg.GetArticleList: %s", err)
+	}
+
+	//!!!
+	return articleList, nil
 }
 func (s *ArticleService) GetArticleById(ctx context.Context, req *blogpost.GetArticleByIDRequest) (*blogpost.GetArticleByIDResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetArticleById not implemented")
+	article, err := s.stg.GetArticleByID(req.Id)
+
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "s.stg.GetArticleByID: %s", err)
+	}
+
+	// !!!
+	return article, nil
 }
