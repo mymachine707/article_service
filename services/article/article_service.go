@@ -61,6 +61,7 @@ func (s *ArticleService) CreateArticle(ctx context.Context, req *blogpost.Create
 		AuthorId:  article.Author.ID,
 		CreatedAt: article.CreatedAt.String(),
 		UpdatedAt: article.UpdatedAt.String(),
+		DeletedAt: article.DeletedAt.String(),
 	}, nil
 }
 func (s *ArticleService) UpdateArticle(ctx context.Context, req *blogpost.UpdateArticleRequest) (*blogpost.Article, error) {
@@ -92,6 +93,7 @@ func (s *ArticleService) UpdateArticle(ctx context.Context, req *blogpost.Update
 		AuthorId:  article.Author.ID,
 		CreatedAt: article.CreatedAt.String(),
 		UpdatedAt: article.UpdatedAt.String(),
+		DeletedAt: article.DeletedAt.String(),
 	}, nil
 }
 
@@ -118,6 +120,7 @@ func (s *ArticleService) DeleteArticle(ctx context.Context, req *blogpost.Delete
 		AuthorId:  article.Author.ID,
 		CreatedAt: article.CreatedAt.String(),
 		UpdatedAt: article.UpdatedAt.String(),
+		DeletedAt: article.DeletedAt.String(),
 	}, nil
 }
 
@@ -140,5 +143,21 @@ func (s *ArticleService) GetArticleById(ctx context.Context, req *blogpost.GetAr
 	}
 
 	// !!!
-	return article, nil
+	return &blogpost.GetArticleByIDResponse{
+		Id: article.ID,
+		Content: &blogpost.Content{
+			Title: article.Title,
+			Body:  article.Body,
+		},
+		Author: &blogpost.GetArticleByIDResponse_Author{
+			Id:         article.Author.ID,
+			Firstname:  article.Author.Firstname,
+			Lastname:   article.Author.Lastname,
+			Middlename: article.Author.Middlename,
+			Fullname:   article.Author.Fullname,
+			CreatedAt:  article.Author.CreatedAt.String(),
+			UpdatedAt:  article.Author.UpdatedAt.String(),
+			DeletedAt:  article.Author.DeletedAt.String(),
+		},
+	}, nil
 }
