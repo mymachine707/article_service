@@ -47,7 +47,7 @@ func main() {
 		panic(err)
 	}
 
-	println("gRPC server tutorial in Go")
+	fmt.Printf("gRPC server tutorial in Go in GRPCPort: %s", cfg.GRPCPort)
 
 	listener, err := net.Listen("tcp", cfg.GRPCPort)
 

@@ -3,13 +3,13 @@ package postgres
 import (
 	"errors"
 	"fmt"
-	"mymachine707/models"
+	"mymachine707/protogen/blogpost"
 )
 
 var err error
 
 // AddAuthor ...
-func (stg Postgres) AddAuthor(id string, entity models.CreateAuthorModul) error {
+func (stg Postgres) AddAuthor(id string, entity *blogpost.CreateAuthorRequest) error {
 	if id == "" {
 		return errors.New("id must exist")
 	}
@@ -43,8 +43,8 @@ func (stg Postgres) AddAuthor(id string, entity models.CreateAuthorModul) error 
 }
 
 // GetAuthorByID ...
-func (stg Postgres) GetAuthorByID(id string) (models.Author, error) {
-	var a models.Author
+func (stg Postgres) GetAuthorByID(id string) (*blogpost.GetAuthorByIDResponse, error) {
+	var a *blogpost.GetAuthorByIDResponse
 
 	if id == "" {
 		return a, errors.New("id must exist")
@@ -60,7 +60,7 @@ func (stg Postgres) GetAuthorByID(id string) (models.Author, error) {
 		au.updated_at,
 		au.deleted_at
 	FROM author AS au WHERE id=$1 AND deleted_at is null`, id).Scan(
-		&a.ID,
+		&a.Id,
 		&a.Firstname,
 		&a.Lastname,
 		&a.Middlename,
@@ -78,7 +78,11 @@ func (stg Postgres) GetAuthorByID(id string) (models.Author, error) {
 }
 
 // GetAuthorList ...
-func (stg Postgres) GetAuthorList(offset, limit int, search string) (resp []models.Author, err error) {
+func (stg Postgres) GetAuthorList(offset, limit int, search string) (resp *blogpost.GetAuthorListResponse, err error) {
+
+	resp = &blogpost.GetAuthorListResponse{
+		Authors: make([]*blogpost.Author, 0),
+	}
 
 	rows, err := stg.db.Queryx(`
 	
@@ -96,10 +100,10 @@ func (stg Postgres) GetAuthorList(offset, limit int, search string) (resp []mode
 	}
 
 	for rows.Next() {
-		var a models.Author
+		var a *blogpost.Author
 
 		err = rows.Scan(
-			&a.ID,
+			&a.Id,
 			&a.Firstname,
 			&a.Lastname,
 			&a.CreatedAt,
@@ -113,7 +117,7 @@ func (stg Postgres) GetAuthorList(offset, limit int, search string) (resp []mode
 			return resp, err
 		}
 
-		resp = append(resp, a)
+		resp.Authors = append(resp.Authors, a)
 
 	}
 
@@ -121,12 +125,12 @@ func (stg Postgres) GetAuthorList(offset, limit int, search string) (resp []mode
 }
 
 // UpdateAuthor ...
-func (stg Postgres) UpdateAuthor(author models.UpdateAuthorModul) error {
+func (stg Postgres) UpdateAuthor(author *blogpost.UpdateAuthorRequest) error {
 
 	fname := author.Firstname + " " + author.Lastname + " " + author.Middlename
 
 	rows, err := stg.db.NamedExec(`Update author set firstname=:f, lastname=:l, middlename=:m, fullname=:fn,updated_at=now() Where id=:id  and deleted_at is null`, map[string]interface{}{
-		"id": author.ID,
+		"id": author.Id,
 		"f":  author.Firstname,
 		"l":  author.Lastname,
 		"m":  author.Middlename,
@@ -173,6 +177,6 @@ func (stg Postgres) DeleteAuthor(idStr string) error {
 }
 
 // hard delete uchun kod
-// func (stg Postgres) removeAuthorDelete(slice []models.Author, s int) []models.Author {
+// func (stg Postgres) removeAuthorDelete(slice []blogpost.Author, s int) []blogpost.Author {
 // 	return append(slice[:s], slice[s+1:]...)
 // }

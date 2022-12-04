@@ -1,20 +1,22 @@
 package storage
 
-import "mymachine707/models"
+import (
+	"mymachine707/protogen/blogpost"
+)
 
 // Interfaces ...
 type Interfaces interface {
 	// For Article
-	AddArticle(id string, entity models.CreateArticleModul) error
-	GetArticleByID(id string) (models.PackedArticleModel, error)
-	GetArticleList(offset, limit int, search string) (resp []models.Article, err error)
-	UpdateArticle(article models.UpdateArticleModul) error
+	AddArticle(id string, entity *blogpost.CreateArticleRequest) error
+	GetArticleByID(id string) (*blogpost.GetArticleByIDResponse, error)
+	GetArticleList(offset, limit int, search string) (resp *blogpost.GetArticleListResponse, err error)
+	UpdateArticle(article *blogpost.UpdateArticleRequest) error
 	DeleteArticle(idStr string) error
 
 	// For Author
-	AddAuthor(id string, entity models.CreateAuthorModul) error
-	GetAuthorByID(id string) (models.Author, error)
-	GetAuthorList(offset, limit int, serach string) (resp []models.Author, err error)
-	UpdateAuthor(author models.UpdateAuthorModul) error
+	AddAuthor(id string, entity *blogpost.CreateAuthorRequest) error
+	GetAuthorByID(id string) (*blogpost.GetAuthorByIDResponse, error)
+	GetAuthorList(offset, limit int, serach string) (resp *blogpost.GetAuthorListResponse, err error)
+	UpdateAuthor(author *blogpost.UpdateAuthorRequest) error
 	DeleteAuthor(idStr string) error
 }

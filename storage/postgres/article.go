@@ -2,17 +2,22 @@ package postgres
 
 import (
 	"errors"
-	"log"
-	"mymachine707/models"
+
+	// "mymachine707/blogpost"
+	"mymachine707/protogen/blogpost"
 )
 
 // AddArticle ...
-func (stg Postgres) AddArticle(id string, entity models.CreateArticleModul) error {
+func (stg Postgres) AddArticle(id string, entity *blogpost.CreateArticleRequest) error {
 	if id == "" {
 		return errors.New("id must exist")
 	}
 
-	_, err := stg.GetAuthorByID(entity.AuthorID)
+	if entity.Content == nil {
+		entity.Content = &blogpost.Content{}
+	}
+
+	_, err := stg.GetAuthorByID(entity.AuthorId)
 
 	if err != nil {
 		return err
@@ -30,9 +35,9 @@ func (stg Postgres) AddArticle(id string, entity models.CreateArticleModul) erro
 		$4
 )`,
 		id,
-		entity.Title,
-		entity.Body,
-		entity.AuthorID,
+		entity.Content.Title,
+		entity.Content.Body,
+		entity.AuthorId,
 	)
 
 	if err != nil {
@@ -43,13 +48,17 @@ func (stg Postgres) AddArticle(id string, entity models.CreateArticleModul) erro
 }
 
 // GetArticleByID ...  //  ????
-func (stg Postgres) GetArticleByID(id string) (models.PackedArticleModel, error) {
-	var a models.PackedArticleModel
+func (stg Postgres) GetArticleByID(id string) (*blogpost.GetArticleByIDResponse, error) {
+	// var res blogpost.GetArticleByIDResponse
+	res := &blogpost.GetArticleByIDResponse{
+		Content: &blogpost.Content{},
+		Author:  &blogpost.GetArticleByIDResponse_Author{},
+	}
 
 	var tempMiddlename *string
 
 	if id == "" {
-		return a, errors.New("id must exist")
+		return res, errors.New("id must exist")
 	}
 
 	err := stg.db.QueryRow(`SELECT 
@@ -67,35 +76,43 @@ func (stg Postgres) GetArticleByID(id string) (models.PackedArticleModel, error)
     au.created_at,
     au.updated_at,
     au.deleted_at FROM article AS ar JOIN author AS au ON ar.author_id = au.id WHERE ar.id = $1`, id).Scan(
-		&a.ID,
-		&a.Title,
-		&a.Body,
-		&a.CreatedAt,
-		&a.UpdatedAt,
-		&a.DeletedAt,
-		&a.Author.ID,
-		&a.Author.Firstname,
-		&a.Author.Lastname,
+		&res.Id,
+		&res.Content.Title,
+		&res.Content.Body,
+		&res.CreatedAt,
+		&res.UpdatedAt,
+		&res.DeletedAt,
+		&res.Author.Id,
+		&res.Author.Firstname,
+		&res.Author.Lastname,
 		&tempMiddlename,
-		&a.Author.Fullname,
-		&a.Author.CreatedAt,
-		&a.Author.UpdatedAt,
-		&a.Author.DeletedAt,
+		&res.Author.Fullname,
+		&res.Author.CreatedAt,
+		&res.Author.UpdatedAt,
+		&res.Author.DeletedAt,
 	)
 
 	if tempMiddlename != nil {
-		a.Author.Middlename = *tempMiddlename
+		res.Author.Middlename = *tempMiddlename
 	}
 
 	if err != nil {
-		return a, err
+		return res, err
 	}
 
-	return a, nil
+	if res.DeletedAt != "" {
+		return res, errors.New("article not found")
+	}
+
+	return res, err
 }
 
 // GetArticleList ...
-func (stg Postgres) GetArticleList(offset, limit int, search string) (resp []models.Article, err error) {
+func (stg Postgres) GetArticleList(offset, limit int, search string) (*blogpost.GetArticleListResponse, error) {
+
+	resp := &blogpost.GetArticleListResponse{
+		Articles: make([]*blogpost.Article, 0),
+	}
 
 	rows, err := stg.db.Queryx(`
 	
@@ -112,12 +129,15 @@ func (stg Postgres) GetArticleList(offset, limit int, search string) (resp []mod
 	}
 
 	for rows.Next() {
-		var a models.Article
+		a := &blogpost.Article{
+			Content: &blogpost.Content{},
+		}
+
 		err := rows.Scan(
-			&a.ID,
-			&a.Title,
-			&a.Body,
-			&a.AuthorID,
+			&a.Id,
+			&a.Content.Title,
+			&a.Content.Body,
+			&a.AuthorId,
 			&a.CreatedAt,
 			&a.UpdatedAt,
 			&a.DeletedAt,
@@ -125,23 +145,27 @@ func (stg Postgres) GetArticleList(offset, limit int, search string) (resp []mod
 
 		//err := rows.StructScan(&a)
 		if err != nil {
-			log.Panic(err)
+			return resp, err
 		}
 
 		//fmt.Printf("%d a---> %#v\n", i, a)
-		resp = append(resp, a)
+		resp.Articles = append(resp.Articles, a) // ??? &  ?
 	}
 
 	return resp, err
 }
 
 // UpdateArticle ...
-func (stg Postgres) UpdateArticle(article models.UpdateArticleModul) error {
+func (stg Postgres) UpdateArticle(article *blogpost.UpdateArticleRequest) error {
+
+	if article.Content == nil {
+		article.Content = &blogpost.Content{}
+	}
 
 	res, err := stg.db.NamedExec("UPDATE article SET title=:t, body=:b, updated_at=now() WHERE id=:id AND deleted_at is null", map[string]interface{}{
-		"id": article.ID,
-		"t":  article.Title,
-		"b":  article.Body,
+		"id": article.Id,
+		"t":  article.Content.Title,
+		"b":  article.Content.Body,
 	})
 
 	if err != nil {
