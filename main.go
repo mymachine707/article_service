@@ -35,7 +35,7 @@ func initGRPC(stg storage.Interfaces) {
 	}
 	s := grpc.NewServer()
 
-	AuthorService := &author.AuthorService{}
+	AuthorService := author.NewAuthorService(stg)
 	blogpost.RegisterAuthorServiceServer(s, AuthorService)
 
 	ArticleService := article.NewArticleService(stg)
@@ -63,10 +63,6 @@ func main() {
 		cfg.PostgresDatabase,
 	)
 
-	fmt.Println("----->>")
-	fmt.Printf("%+v\n", cfg)
-	fmt.Println("---->>")
-
 	docs.SwaggerInfo.Title = cfg.App
 	docs.SwaggerInfo.Version = cfg.AppVersion
 
@@ -79,13 +75,16 @@ func main() {
 		panic(err)
 	}
 
+	go initGRPC(stg)
+
 	if cfg.Environment != "development" {
 		gin.SetMode(gin.ReleaseMode)
 	}
+	fmt.Println("----->>")
+	fmt.Printf("%+v\n", cfg)
+	fmt.Println("---->>")
 
 	r := gin.New()
-
-	initGRPC(stg)
 
 	if cfg.Environment != "production" {
 		r.Use(gin.Logger(), gin.Recovery()) // Later they will be replaced by custom Logger and Recovery

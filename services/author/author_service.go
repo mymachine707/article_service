@@ -12,19 +12,24 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type AuthorService struct {
+type authorService struct {
 	stg storage.Interfaces
 	blogpost.UnimplementedAuthorServiceServer
 }
 
-func (s *AuthorService) Ping(ctx context.Context, req *blogpost.Empty) (*blogpost.Pong, error) {
+func NewAuthorService(stg storage.Interfaces) *authorService {
+	return &authorService{
+		stg: stg,
+	}
+}
+func (s *authorService) Ping(ctx context.Context, req *blogpost.Empty) (*blogpost.Pong, error) {
 	log.Println("Ping")
 	return &blogpost.Pong{
 		Message: "Ok",
 	}, nil
 }
 
-func (s *AuthorService) CreateAuthor(ctx context.Context, req *blogpost.CreateAuthorRequest) (*blogpost.Author, error) {
+func (s *authorService) CreateAuthor(ctx context.Context, req *blogpost.CreateAuthorRequest) (*blogpost.Author, error) {
 	id := uuid.New()
 	err := s.stg.AddAuthor(id.String(), models.CreateAuthorModul{
 		Firstname:  req.Firstname,
@@ -39,6 +44,16 @@ func (s *AuthorService) CreateAuthor(ctx context.Context, req *blogpost.CreateAu
 		return nil, status.Errorf(codes.Internal, "s.stg.GetAuthorByID: %s", err)
 	}
 
+	var updatedAt string
+	if author.UpdatedAt != nil {
+		updatedAt = author.UpdatedAt.String()
+	}
+
+	var deletedAt string
+	if author.DeletedAt != nil {
+		deletedAt = author.UpdatedAt.String()
+	}
+
 	return &blogpost.Author{
 		Id:         author.ID,
 		Firstname:  author.Firstname,
@@ -46,12 +61,12 @@ func (s *AuthorService) CreateAuthor(ctx context.Context, req *blogpost.CreateAu
 		Middlename: author.Middlename,
 		Fullname:   author.Fullname,
 		CreatedAt:  author.CreatedAt.String(),
-		UpdatedAt:  author.UpdatedAt.String(),
-		DeletedAt:  author.DeletedAt.String(),
+		UpdatedAt:  updatedAt,
+		DeletedAt:  deletedAt,
 	}, nil
 }
 
-func (s *AuthorService) UpdateAuthor(ctx context.Context, req *blogpost.UpdateAuthorRequest) (*blogpost.Author, error) {
+func (s *authorService) UpdateAuthor(ctx context.Context, req *blogpost.UpdateAuthorRequest) (*blogpost.Author, error) {
 	err := s.stg.UpdateAuthor(models.UpdateAuthorModul{
 		ID:         req.Id,
 		Firstname:  req.Firstname,
@@ -68,6 +83,16 @@ func (s *AuthorService) UpdateAuthor(ctx context.Context, req *blogpost.UpdateAu
 		return nil, status.Errorf(codes.Internal, "s.stg.GetAuthorByID: %s", err)
 	}
 
+	var updatedAt string
+	if author.UpdatedAt != nil {
+		updatedAt = author.UpdatedAt.String()
+	}
+
+	var deletedAt string
+	if author.DeletedAt != nil {
+		deletedAt = author.UpdatedAt.String()
+	}
+
 	return &blogpost.Author{
 		Id:         author.ID,
 		Firstname:  author.Firstname,
@@ -75,12 +100,12 @@ func (s *AuthorService) UpdateAuthor(ctx context.Context, req *blogpost.UpdateAu
 		Middlename: author.Middlename,
 		Fullname:   author.Fullname,
 		CreatedAt:  author.CreatedAt.String(),
-		UpdatedAt:  author.UpdatedAt.String(),
-		DeletedAt:  author.DeletedAt.String(),
+		UpdatedAt:  updatedAt,
+		DeletedAt:  deletedAt,
 	}, nil
 }
 
-func (s *AuthorService) DeleteAuthor(ctx context.Context, req *blogpost.DeleteAuthorRequest) (*blogpost.Author, error) {
+func (s *authorService) DeleteAuthor(ctx context.Context, req *blogpost.DeleteAuthorRequest) (*blogpost.Author, error) {
 
 	author, err := s.stg.GetAuthorByID(req.Id) // maqsad tekshirish rostan  ham create bo'ldimi?
 	if err != nil {
@@ -92,6 +117,15 @@ func (s *AuthorService) DeleteAuthor(ctx context.Context, req *blogpost.DeleteAu
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "s.stg.DeleteAuthor: %s", err)
 	}
+	var updatedAt string
+	if author.UpdatedAt != nil {
+		updatedAt = author.UpdatedAt.String()
+	}
+
+	var deletedAt string
+	if author.DeletedAt != nil {
+		deletedAt = author.UpdatedAt.String()
+	}
 
 	return &blogpost.Author{
 		Id:         author.ID,
@@ -100,26 +134,64 @@ func (s *AuthorService) DeleteAuthor(ctx context.Context, req *blogpost.DeleteAu
 		Middlename: author.Middlename,
 		Fullname:   author.Fullname,
 		CreatedAt:  author.CreatedAt.String(),
-		UpdatedAt:  author.UpdatedAt.String(),
-		DeletedAt:  author.DeletedAt.String(),
+		UpdatedAt:  updatedAt,
+		DeletedAt:  deletedAt,
 	}, nil
 }
 
-func (s *AuthorService) GetAuthorList(ctx context.Context, req *blogpost.GetAuthorListRequest) (*blogpost.GetAuthorListResponse, error) {
+func (s *authorService) GetAuthorList(ctx context.Context, req *blogpost.GetAuthorListRequest) (*blogpost.GetAuthorListResponse, error) {
+	res := &blogpost.GetAuthorListResponse{
+		Authors: make([]*blogpost.Author, 0),
+	}
+
 	authorList, err := s.stg.GetAuthorList(int(req.Offset), int(req.Limit), req.Search)
 
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "s.stg.GetAuthorList: %s", err)
 	}
 
-	return authorList, nil
+	for _, v := range authorList {
+		var updatedAt string
+
+		if v.UpdatedAt != nil {
+			updatedAt = v.UpdatedAt.String()
+		}
+
+		var deletedAt string
+		if v.DeletedAt != nil {
+			deletedAt = v.UpdatedAt.String()
+		}
+
+		res.Authors = append(res.Authors, &blogpost.Author{
+			Id:         v.ID,
+			Firstname:  v.Firstname,
+			Lastname:   v.Lastname,
+			Middlename: v.Middlename,
+			Fullname:   v.Fullname,
+			CreatedAt:  v.CreatedAt.String(),
+			UpdatedAt:  updatedAt,
+			DeletedAt:  deletedAt,
+		})
+	}
+
+	return res, nil
 }
-func (s *AuthorService) GetAuthorById(ctx context.Context, req *blogpost.GetAuthorByIDRequest) (*blogpost.GetAuthorByIDResponse, error) {
+func (s *authorService) GetAuthorById(ctx context.Context, req *blogpost.GetAuthorByIDRequest) (*blogpost.GetAuthorByIDResponse, error) {
 
 	author, err := s.stg.GetAuthorByID(req.Id)
 
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "s.stg.GetAuthorList: %s", err)
+	}
+
+	var updatedAt string
+	if author.UpdatedAt != nil {
+		updatedAt = author.UpdatedAt.String()
+	}
+
+	var deletedAt string
+	if author.DeletedAt != nil {
+		deletedAt = author.UpdatedAt.String()
 	}
 
 	return &blogpost.GetAuthorByIDResponse{
@@ -129,7 +201,7 @@ func (s *AuthorService) GetAuthorById(ctx context.Context, req *blogpost.GetAuth
 		Middlename: author.Middlename,
 		Fullname:   author.Fullname,
 		CreatedAt:  author.CreatedAt.String(),
-		UpdatedAt:  author.UpdatedAt.String(),
-		DeletedAt:  author.DeletedAt.String(),
+		UpdatedAt:  updatedAt,
+		DeletedAt:  deletedAt,
 	}, nil
 }
