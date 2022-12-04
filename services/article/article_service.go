@@ -2,6 +2,7 @@ package article
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"mymachine707/models"
 	blogpost "mymachine707/protogen/blogpost"
@@ -31,7 +32,7 @@ func (s *articleService) Ping(ctx context.Context, req *blogpost.Empty) (*blogpo
 }
 
 func (s *articleService) CreateArticle(ctx context.Context, req *blogpost.CreateArticleRequest) (*blogpost.Article, error) {
-
+	fmt.Println("<<< ---- CreateArticle ---->>>")
 	// create new article
 	id := uuid.New()
 	err := s.stg.AddArticle(id.String(), models.CreateArticleModul{
@@ -74,7 +75,7 @@ func (s *articleService) CreateArticle(ctx context.Context, req *blogpost.Create
 	}, nil
 }
 func (s *articleService) UpdateArticle(ctx context.Context, req *blogpost.UpdateArticleRequest) (*blogpost.Article, error) {
-
+	fmt.Println("<<< ---- UpdateArticle ---->>>")
 	err := s.stg.UpdateArticle(models.UpdateArticleModul{
 		ID: req.Id,
 		Content: models.Content{
@@ -90,7 +91,7 @@ func (s *articleService) UpdateArticle(ctx context.Context, req *blogpost.Update
 	article, err := s.stg.GetArticleByID(req.Id) // maqsad tekshirish rostan  ham create bo'ldimi?
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "s.stg.GetArticleByID: %s", err.Error())
+		return nil, status.Errorf(codes.Internal, "s.stg.GetArticleByID---!: %s", err.Error())
 	}
 
 	var updatedAt string
@@ -117,7 +118,7 @@ func (s *articleService) UpdateArticle(ctx context.Context, req *blogpost.Update
 }
 
 func (s *articleService) DeleteArticle(ctx context.Context, req *blogpost.DeleteArticleRequest) (*blogpost.Article, error) {
-
+	fmt.Println("<<< ---- DeleteArticle ---->>>")
 	err := s.stg.DeleteArticle(req.Id)
 
 	if err != nil {
@@ -154,7 +155,7 @@ func (s *articleService) DeleteArticle(ctx context.Context, req *blogpost.Delete
 }
 
 func (s *articleService) GetArticleList(ctx context.Context, req *blogpost.GetArticleListRequest) (*blogpost.GetArticleListResponse, error) {
-
+	fmt.Println("<<< ---- GetArticleList ---->>>")
 	res := &blogpost.GetArticleListResponse{
 		Articles: make([]*blogpost.Article, 0), // Article list nil bo'masligi uchun
 	}
@@ -192,13 +193,15 @@ func (s *articleService) GetArticleList(ctx context.Context, req *blogpost.GetAr
 	return res, nil
 }
 func (s *articleService) GetArticleById(ctx context.Context, req *blogpost.GetArticleByIDRequest) (*blogpost.GetArticleByIDResponse, error) {
+	fmt.Println("<<< ---- GetArticleById ---->>>")
+
 	article, err := s.stg.GetArticleByID(req.Id)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "s.stg.GetArticleByID: %s", err.Error())
 	}
 
 	if article.DeletedAt != nil {
-		return nil, status.Errorf(codes.NotFound, "s.stg.GetArticleByID: %s", err.Error())
+		return nil, status.Errorf(codes.NotFound, "Not found article with id: %s", req.Id)
 	}
 
 	var authorDeletedAt string

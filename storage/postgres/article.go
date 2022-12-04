@@ -106,8 +106,7 @@ func (stg Postgres) GetArticleList(offset, limit int, search string) (resp []mod
 	OFFSET $3
 	
 	`, search, limit, offset)
-	
-	
+
 	if err != nil {
 		return resp, err
 	}

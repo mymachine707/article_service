@@ -2,6 +2,7 @@ package author
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"mymachine707/models"
 	"mymachine707/protogen/blogpost"
@@ -23,6 +24,7 @@ func NewAuthorService(stg storage.Interfaces) *authorService {
 	}
 }
 func (s *authorService) Ping(ctx context.Context, req *blogpost.Empty) (*blogpost.Pong, error) {
+	fmt.Println("<<< ---- Ping ---->>>")
 	log.Println("Ping")
 	return &blogpost.Pong{
 		Message: "Ok",
@@ -30,6 +32,8 @@ func (s *authorService) Ping(ctx context.Context, req *blogpost.Empty) (*blogpos
 }
 
 func (s *authorService) CreateAuthor(ctx context.Context, req *blogpost.CreateAuthorRequest) (*blogpost.Author, error) {
+	fmt.Println("<<< ---- CreateAuthor ---->>>")
+
 	id := uuid.New()
 	err := s.stg.AddAuthor(id.String(), models.CreateAuthorModul{
 		Firstname:  req.Firstname,
@@ -67,6 +71,8 @@ func (s *authorService) CreateAuthor(ctx context.Context, req *blogpost.CreateAu
 }
 
 func (s *authorService) UpdateAuthor(ctx context.Context, req *blogpost.UpdateAuthorRequest) (*blogpost.Author, error) {
+	fmt.Println("<<< ---- UpdateAuthor ---->>>")
+
 	err := s.stg.UpdateAuthor(models.UpdateAuthorModul{
 		ID:         req.Id,
 		Firstname:  req.Firstname,
@@ -106,6 +112,7 @@ func (s *authorService) UpdateAuthor(ctx context.Context, req *blogpost.UpdateAu
 }
 
 func (s *authorService) DeleteAuthor(ctx context.Context, req *blogpost.DeleteAuthorRequest) (*blogpost.Author, error) {
+	fmt.Println("<<< ---- DeleteAuthor ---->>>")
 
 	author, err := s.stg.GetAuthorByID(req.Id) // maqsad tekshirish rostan  ham create bo'ldimi?
 	if err != nil {
@@ -140,6 +147,8 @@ func (s *authorService) DeleteAuthor(ctx context.Context, req *blogpost.DeleteAu
 }
 
 func (s *authorService) GetAuthorList(ctx context.Context, req *blogpost.GetAuthorListRequest) (*blogpost.GetAuthorListResponse, error) {
+	fmt.Println("<<< ---- GetAuthorList ---->>>")
+
 	res := &blogpost.GetAuthorListResponse{
 		Authors: make([]*blogpost.Author, 0),
 	}
@@ -177,11 +186,16 @@ func (s *authorService) GetAuthorList(ctx context.Context, req *blogpost.GetAuth
 	return res, nil
 }
 func (s *authorService) GetAuthorById(ctx context.Context, req *blogpost.GetAuthorByIDRequest) (*blogpost.GetAuthorByIDResponse, error) {
+	fmt.Println("<<< ---- GetAuthorById ---->>>")
 
 	author, err := s.stg.GetAuthorByID(req.Id)
 
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "s.stg.GetAuthorList: %s", err)
+	}
+
+	if author.DeletedAt != nil {
+		return nil, status.Errorf(codes.NotFound, "Not found author with id: %s", req.Id)
 	}
 
 	var updatedAt string
