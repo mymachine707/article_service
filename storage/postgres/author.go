@@ -2,8 +2,10 @@ package postgres
 
 import (
 	"errors"
-	"fmt"
 	"mymachine707/protogen/blogpost"
+	"time"
+
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var err error
@@ -43,38 +45,47 @@ func (stg Postgres) AddAuthor(id string, entity *blogpost.CreateAuthorRequest) e
 }
 
 // GetAuthorByID ...
-func (stg Postgres) GetAuthorByID(id string) (*blogpost.GetAuthorByIDResponse, error) {
-	var a *blogpost.GetAuthorByIDResponse
+func (stg Postgres) GetAuthorByID(id string) (*blogpost.Author, error) {
+	result := &blogpost.Author{}
 
-	if id == "" {
-		return a, errors.New("id must exist")
-	}
-
+	var createdAt, updatedAt, deletedAt *time.Time
 	err := stg.db.QueryRow(`SELECT
-		au.id,
-		au.firstname,
-		au.lastname,
-		au.middlename,
-		au.fullname,
-		au.created_at,
-		au.updated_at,
-		au.deleted_at
-	FROM author AS au WHERE id=$1 AND deleted_at is null`, id).Scan(
-		&a.Id,
-		&a.Firstname,
-		&a.Lastname,
-		&a.Middlename,
-		&a.Fullname,
-		&a.CreatedAt,
-		&a.UpdatedAt,
-		&a.DeletedAt,
+		id,
+		firstname,
+		lastname,
+		middlename,
+		fullname,
+		created_at,
+		updated_at,
+		deleted_at
+	FROM author WHERE id=$1`, id).Scan(
+		&result.Id,
+		&result.Firstname,
+		&result.Lastname,
+		&result.Middlename,
+		&result.Fullname,
+		&createdAt,
+		&updatedAt,
+		&deletedAt,
 	)
 
 	if err != nil {
-		return a, err
+		return result, err
 	}
 
-	return a, nil
+	if createdAt != nil {
+		result.CreatedAt = timestamppb.New(*createdAt)
+	}
+
+	if updatedAt != nil {
+		result.UpdatedAt = timestamppb.New(*updatedAt)
+	}
+
+	if deletedAt != nil {
+		result.DeletedAt = timestamppb.New(*deletedAt)
+	}
+
+	return result, nil
 }
 
 // GetAuthorList ...
@@ -86,9 +97,8 @@ func (stg Postgres) GetAuthorList(offset, limit int, search string) (resp *blogp
 
 	rows, err := stg.db.Queryx(`
 	
-	Select * from author WHERE 
-
-		((firstname ILIKE '%' || $1 || '%') OR (lastname ILIKE '%' || $1 || '%') OR 
+	Select * from author WHERE ((firstname ILIKE '%' || $1 || '%') OR 
+		(lastname ILIKE '%' || $1 || '%') OR 
 		(middlename ILIKE '%' || $1 || '%') OR 
 		(fullname ILIKE '%' || $1 || '%'))
 		AND deleted_at is null 
@@ -98,23 +108,35 @@ func (stg Postgres) GetAuthorList(offset, limit int, search string) (resp *blogp
 	if err != nil {
 		return resp, err
 	}
+	var updatedAt, deletedAt *time.Time
 
 	for rows.Next() {
 		var a *blogpost.Author
 
+		//var updatedAt, deletedAt *string
 		err = rows.Scan(
 			&a.Id,
 			&a.Firstname,
 			&a.Lastname,
-			&a.CreatedAt,
-			&a.UpdatedAt,
-			&a.DeletedAt,
 			&a.Middlename,
 			&a.Fullname,
+			&a.CreatedAt,
+			&updatedAt,
+			&deletedAt,
 		)
-		fmt.Println(a.UpdatedAt)
+
 		if err != nil {
 			return resp, err
+		}
+
+		// if createdAt != nil {
+		// 	a.CreatedAt = timestamppb.New(*createdAt)
+		// }
+		if updatedAt != nil {
+			a.UpdatedAt = timestamppb.New(*updatedAt)
+		}
+		if deletedAt != nil {
+			a.DeletedAt = timestamppb.New(*deletedAt)
 		}
 
 		resp.Authors = append(resp.Authors, a)

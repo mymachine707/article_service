@@ -25,6 +25,7 @@ func NewArticleService(stg storage.Interfaces) *articleService {
 
 func (s *articleService) Ping(ctx context.Context, req *blogpost.Empty) (*blogpost.Pong, error) {
 	log.Println("Ping")
+
 	return &blogpost.Pong{
 		Message: "Ok",
 	}, nil
@@ -34,14 +35,13 @@ func (s *articleService) CreateArticle(ctx context.Context, req *blogpost.Create
 	fmt.Println("<<< ---- CreateArticle ---->>>")
 	// create new article
 	id := uuid.New()
-	err := s.stg.AddArticle(id.String(), req)
 
+	err := s.stg.AddArticle(id.String(), req)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "s.stg.AddArticle: %s", err.Error())
 	}
 
 	article, err := s.stg.GetArticleByID(id.String()) // maqsad tekshirish rostan  ham create bo'ldimi?
-
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "s.stg.GetArticleByID: %s", err.Error())
 	}
@@ -65,7 +65,6 @@ func (s *articleService) UpdateArticle(ctx context.Context, req *blogpost.Update
 	}
 
 	article, err := s.stg.GetArticleByID(req.Id) // maqsad tekshirish rostan  ham create bo'ldimi?
-
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "s.stg.GetArticleByID---!: %s", err.Error())
 	}

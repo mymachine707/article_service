@@ -119,7 +119,7 @@ func (s *authorService) GetAuthorList(ctx context.Context, req *blogpost.GetAuth
 	return res, nil
 }
 
-func (s *authorService) GetAuthorById(ctx context.Context, req *blogpost.GetAuthorByIDRequest) (*blogpost.GetAuthorByIDResponse, error) {
+func (s *authorService) GetAuthorById(ctx context.Context, req *blogpost.GetAuthorByIDRequest) (*blogpost.Author, error) {
 	fmt.Println("<<< ---- GetAuthorById ---->>>")
 
 	author, err := s.stg.GetAuthorByID(req.Id)

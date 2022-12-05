@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"errors"
+	"time"
 
 	// "mymachine707/blogpost"
 	"mymachine707/protogen/blogpost"
@@ -9,18 +10,14 @@ import (
 
 // AddArticle ...
 func (stg Postgres) AddArticle(id string, entity *blogpost.CreateArticleRequest) error {
-	if id == "" {
-		return errors.New("id must exist")
-	}
-
-	if entity.Content == nil {
-		entity.Content = &blogpost.Content{}
-	}
-
 	_, err := stg.GetAuthorByID(entity.AuthorId)
 
 	if err != nil {
 		return err
+	}
+
+	if entity.Content == nil {
+		entity.Content = &blogpost.Content{}
 	}
 
 	_, err = stg.db.Exec(`INSERT INTO article (
@@ -55,12 +52,12 @@ func (stg Postgres) GetArticleByID(id string) (*blogpost.GetArticleByIDResponse,
 		Author:  &blogpost.GetArticleByIDResponse_Author{},
 	}
 
-	var tempMiddlename *string
-
 	if id == "" {
 		return res, errors.New("id must exist")
 	}
 
+	var deletedAt, authorDeletedAt *time.Time
+	var updatedAt, authorUpdatedAt, tempMiddlename *string
 	err := stg.db.QueryRow(`SELECT 
     ar.id,
     ar.title,
@@ -80,16 +77,16 @@ func (stg Postgres) GetArticleByID(id string) (*blogpost.GetArticleByIDResponse,
 		&res.Content.Title,
 		&res.Content.Body,
 		&res.CreatedAt,
-		&res.UpdatedAt,
-		&res.DeletedAt,
+		&updatedAt,
+		&deletedAt,
 		&res.Author.Id,
 		&res.Author.Firstname,
 		&res.Author.Lastname,
 		&tempMiddlename,
 		&res.Author.Fullname,
 		&res.Author.CreatedAt,
-		&res.Author.UpdatedAt,
-		&res.Author.DeletedAt,
+		&authorUpdatedAt,
+		&authorDeletedAt,
 	)
 
 	if tempMiddlename != nil {
@@ -100,7 +97,19 @@ func (stg Postgres) GetArticleByID(id string) (*blogpost.GetArticleByIDResponse,
 		return res, err
 	}
 
-	if res.DeletedAt != "" {
+	if updatedAt != nil {
+		res.UpdatedAt = *updatedAt
+	}
+
+	if authorUpdatedAt != nil {
+		res.Author.UpdatedAt = *authorUpdatedAt
+	}
+
+	if authorDeletedAt != nil {
+		res.Author.UpdatedAt = *authorUpdatedAt
+	}
+
+	if deletedAt != nil {
 		return res, errors.New("article not found")
 	}
 
@@ -133,14 +142,15 @@ func (stg Postgres) GetArticleList(offset, limit int, search string) (*blogpost.
 			Content: &blogpost.Content{},
 		}
 
+		var updatedAt, deletedAt *string
 		err := rows.Scan(
 			&a.Id,
 			&a.Content.Title,
 			&a.Content.Body,
 			&a.AuthorId,
 			&a.CreatedAt,
-			&a.UpdatedAt,
-			&a.DeletedAt,
+			&updatedAt,
+			&deletedAt,
 		)
 
 		//err := rows.StructScan(&a)
