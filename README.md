@@ -17,3 +17,8 @@ Migrate Db:
 
 ctrl+f2  bir xil elementni hammasini bir vaqtda belgilash
 ctrl+D bir xil elementni bittadan belgilash
+
+
+
+get author by id da created at voqti berkilib qovotti
+lekin listta ko'rsatvotti

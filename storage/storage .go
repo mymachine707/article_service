@@ -15,7 +15,7 @@ type Interfaces interface {
 
 	// For Author
 	AddAuthor(id string, entity *blogpost.CreateAuthorRequest) error
-	GetAuthorByID(id string) (*blogpost.Author, error)
+	GetAuthorByID(id string) (*blogpost.GetAuthorByIDResponse, error)
 	GetAuthorList(offset, limit int, serach string) (resp *blogpost.GetAuthorListResponse, err error)
 	UpdateAuthor(author *blogpost.UpdateAuthorRequest) error
 	DeleteAuthor(idStr string) error

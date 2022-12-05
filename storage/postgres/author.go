@@ -4,8 +4,6 @@ import (
 	"errors"
 	"mymachine707/protogen/blogpost"
 	"time"
-
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var err error
@@ -45,8 +43,8 @@ func (stg Postgres) AddAuthor(id string, entity *blogpost.CreateAuthorRequest) e
 }
 
 // GetAuthorByID ...
-func (stg Postgres) GetAuthorByID(id string) (*blogpost.Author, error) {
-	result := &blogpost.Author{}
+func (stg Postgres) GetAuthorByID(id string) (*blogpost.GetAuthorByIDResponse, error) {
+	result := &blogpost.GetAuthorByIDResponse{}
 
 	var createdAt, updatedAt, deletedAt *time.Time
 	err := stg.db.QueryRow(`SELECT
@@ -73,16 +71,16 @@ func (stg Postgres) GetAuthorByID(id string) (*blogpost.Author, error) {
 		return result, err
 	}
 
-	if createdAt != nil {
-		result.CreatedAt = timestamppb.New(*createdAt)
-	}
+	// if createdAt != nil {
+	// 	result.CreatedAt = timestamppb.New(*createdAt)
+	// }
 
 	if updatedAt != nil {
-		result.UpdatedAt = timestamppb.New(*updatedAt)
+		result.UpdatedAt = updatedAt.String()
 	}
 
 	if deletedAt != nil {
-		result.DeletedAt = timestamppb.New(*deletedAt)
+		result.DeletedAt = deletedAt.String()
 	}
 
 	return result, nil
@@ -92,12 +90,20 @@ func (stg Postgres) GetAuthorByID(id string) (*blogpost.Author, error) {
 func (stg Postgres) GetAuthorList(offset, limit int, search string) (resp *blogpost.GetAuthorListResponse, err error) {
 
 	resp = &blogpost.GetAuthorListResponse{
-		Authors: make([]*blogpost.Author, 0),
+		Authors: make([]*blogpost.AuthorList, 0),
 	}
 
 	rows, err := stg.db.Queryx(`
-	
-	Select * from author WHERE ((firstname ILIKE '%' || $1 || '%') OR 
+	Select 
+	id,
+	firstname,
+	lastname,
+	middlename,
+	fullname,
+	created_at,
+	updated_at,
+	deleted_at
+ from author WHERE ((firstname ILIKE '%' || $1 || '%') OR 
 		(lastname ILIKE '%' || $1 || '%') OR 
 		(middlename ILIKE '%' || $1 || '%') OR 
 		(fullname ILIKE '%' || $1 || '%'))
@@ -108,12 +114,11 @@ func (stg Postgres) GetAuthorList(offset, limit int, search string) (resp *blogp
 	if err != nil {
 		return resp, err
 	}
-	var updatedAt, deletedAt *time.Time
 
 	for rows.Next() {
-		var a *blogpost.Author
+		a := &blogpost.AuthorList{}
+		var updatedAt, deletedAt *string
 
-		//var updatedAt, deletedAt *string
 		err = rows.Scan(
 			&a.Id,
 			&a.Firstname,
@@ -125,18 +130,16 @@ func (stg Postgres) GetAuthorList(offset, limit int, search string) (resp *blogp
 			&deletedAt,
 		)
 
-		if err != nil {
-			return resp, err
+		if updatedAt != nil {
+			a.UpdatedAt = *updatedAt
 		}
 
-		// if createdAt != nil {
-		// 	a.CreatedAt = timestamppb.New(*createdAt)
-		// }
-		if updatedAt != nil {
-			a.UpdatedAt = timestamppb.New(*updatedAt)
-		}
 		if deletedAt != nil {
-			a.DeletedAt = timestamppb.New(*deletedAt)
+			a.DeletedAt = *deletedAt
+		}
+
+		if err != nil {
+			return resp, err
 		}
 
 		resp.Authors = append(resp.Authors, a)
