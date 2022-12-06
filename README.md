@@ -20,5 +20,6 @@ ctrl+D bir xil elementni bittadan belgilash
 
 
 
+
 get author by id da created at voqti berkilib qovotti
 lekin listta ko'rsatvotti
