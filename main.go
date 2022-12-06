@@ -23,7 +23,7 @@ func initGRPC(cfg config.Config, stg storage.Interfaces) {
 
 }
 
-// @license.name Apache 2.0
+//	@license.name	Apache 2.0
 func main() {
 	cfg := config.Load()
 
